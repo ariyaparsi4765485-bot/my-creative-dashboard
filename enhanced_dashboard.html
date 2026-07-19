@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verto — LinkedIn Analytics Dashboard</title>
+<meta name="description" content="Verto is a concept LinkedIn analytics dashboard — a frontend portfolio project demonstrating UI, data-viz and interaction design.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    /* ================= CSS Variables ================= */
+    :root {
+        --bg-main: #050B14;
+        --surface: rgba(15, 23, 42, 0.7);
+        --primary: #8B5CF6;
+        --accent: #06B6D4;
+        --success: #10B981;
+        --danger: #EF4444;
+        --pink: #EC4899;
+        --text-main: #F8FAFC;
+        --text-sec: #94A3B8;
+        --text-mute: #64748B;
+        --border-color: rgba(255, 255, 255, 0.08);
+
+        --glow-primary: 0 0 15px rgba(139, 92, 246, 0.4);
+        --glow-accent: 0 0 15px rgba(6, 182, 212, 0.4);
+        --glow-success: 0 0 15px rgba(16, 185, 129, 0.4);
+        --glow-pink: 0 0 15px rgba(236, 72, 153, 0.4);
+        --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+
+        --font-display: 'Space Grotesk', system-ui, sans-serif;
+        --font-body: 'Inter', system-ui, sans-serif;
+        --sidebar-width: 260px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: var(--font-body);
+        background-color: var(--bg-main);
+        color: var(--text-main);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        background-image:
+            radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.08), transparent 25%),
+            radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.08), transparent 25%);
+    }
+
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; font-family: inherit; background: none; }
+    input { font-family: inherit; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+    /* ================= Layout ================= */
+    .sidebar {
+        width: var(--sidebar-width); background: var(--surface); backdrop-filter: blur(12px);
+        border-right: 1px solid var(--border-color); display: flex; flex-direction: column;
+        z-index: 30; flex-shrink: 0; transition: transform 0.3s ease;
+    }
+
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
+
+    .header {
+        height: 64px; background: var(--surface); backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border-color); display: flex; align-items: center;
+        justify-content: space-between; padding: 0 1.5rem; z-index: 10;
+    }
+
+    .content { flex: 1; overflow-y: auto; padding: 1.5rem; }
+    .container { max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+
+    /* ================= Sidebar ================= */
+    .brand { height: 64px; display: flex; align-items: center; padding: 0 1.5rem; border-bottom: 1px solid var(--border-color); font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; justify-content: space-between; letter-spacing: 0.01em; }
+    .brand-content { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: var(--glow-primary); flex-shrink: 0; }
+    .close-sidebar { display: none; color: var(--text-sec); }
+
+    .nav-menu { padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; overflow-y: auto; }
+    .nav-item { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.75rem; color: var(--text-sec); font-weight: 500; font-size: 0.9rem; transition: all 0.2s; }
+    .nav-item svg { width: 20px; height: 20px; margin-right: 0.75rem; stroke: currentColor; fill: none; stroke-width: 2; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+    .nav-item.active { background: rgba(139, 92, 246, 0.15); color: var(--primary); border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: var(--glow-primary); }
+
+    .sidebar-footer { padding: 1rem 1.5rem 1.25rem; border-top: 1px solid var(--border-color); font-size: 0.7rem; color: var(--text-mute); line-height: 1.5; }
+    .sidebar-footer strong { color: var(--text-sec); }
+
+    /* ================= Header ================= */
+    .header-left-side { display: flex; align-items: center; gap: 1rem; flex: 1;}
+    .menu-toggle { display: none; color: var(--text-main); }
+
+    .search-bar { position: relative; width: 100%; max-width: 350px; }
+    .search-bar input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 0.5rem 1rem 0.5rem 2.5rem; color: var(--text-main); outline: none; transition: 0.2s; font-size: 0.875rem; }
+    .search-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+    .search-bar svg { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--text-sec); fill: none; pointer-events: none; }
+
+    .header-actions { display: flex; align-items: center; gap: 1rem; flex-shrink: 0; position: relative; }
+    .icon-btn { color: var(--text-sec); position: relative; transition: 0.2s; display: flex; }
+    .icon-btn:hover { color: var(--text-main); }
+    .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .badge { position: absolute; top: 0; right: -2px; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: var(--glow-accent); border: 2px solid var(--bg-main); }
+    .divider { width: 1px; height: 24px; background: var(--border-color); }
+    .avatar-btn { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); padding: 2px; box-shadow: var(--glow-primary); }
+    .avatar-inner { width: 100%; height: 100%; border-radius: 50%; background-color: var(--bg-main); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+    .dropdown-panel { position: absolute; top: 52px; right: 0; width: 280px; background: #0B1220; border: 1px solid var(--border-color); border-radius: 0.85rem; box-shadow: var(--shadow-soft); z-index: 40; opacity: 0; visibility: hidden; transform: translateY(-6px); transition: 0.2s; padding: 0.5rem; }
+    .dropdown-panel.open { opacity: 1; visibility: visible; transform: translateY(0); }
+    .dropdown-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); padding: 0.6rem 0.75rem 0.4rem; }
+    .dropdown-item { display: flex; gap: 0.6rem; padding: 0.6rem 0.75rem; border-radius: 0.5rem; font-size: 0.8rem; }
+    .dropdown-item:hover { background: rgba(255,255,255,0.05); }
+    .dropdown-item p { color: var(--text-sec); }
+    .dropdown-item strong { color: var(--text-main); font-weight: 500; display: block; margin-bottom: 0.15rem; }
+
+    /* ================= Content ================= */
+    .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 1rem;}
+    .page-title { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .page-subtitle { font-size: 0.875rem; color: var(--text-sec); }
+    .btn-primary { display: flex; align-items: center; gap: 0.5rem; background: linear-gradient(90deg, var(--primary), #6D28D9); color: white; padding: 0.6rem 1.1rem; border-radius: 0.75rem; font-weight: 500; font-size: 0.875rem; transition: 0.2s; box-shadow: var(--glow-primary); }
+    .btn-primary svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; }
+
+    .card { background: var(--surface); backdrop-filter: blur(12px); border-radius: 1rem; padding: 1.5rem; border: 1px solid var(--border-color); box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
+    .card-kpi { transition: transform 0.2s; cursor: default; }
+    .card-kpi:hover { transform: translateY(-4px); }
+    .card-kpi-1 { border-top: 2px solid rgba(139, 92, 246, 0.5); }
+    .card-kpi-2 { border-top: 2px solid rgba(6, 182, 212, 0.5); }
+    .card-kpi-3 { border-top: 2px solid rgba(236, 72, 153, 0.5); }
+    .card-kpi-4 { border-top: 2px solid rgba(16, 185, 129, 0.5); }
+
+    .kpi-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .kpi-title { font-size: 0.8rem; font-weight: 500; color: var(--text-sec); }
+    .kpi-icon { padding: 0.5rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; }
+    .kpi-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .kpi-value { font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; margin-top: 1rem; }
+    .kpi-trend { display: flex; align-items: center; font-size: 0.8rem; margin-top: 0.5rem; }
+    .kpi-trend svg { width: 16px; height: 16px; margin-right: 0.25rem; stroke: currentColor; fill: none; stroke-width: 2; }
+    .text-success { color: var(--success); }
+    .text-danger { color: var(--danger); }
+    .text-sec { color: var(--text-sec); font-weight: normal; margin-left: 0.4rem; }
+
+    .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .chart-tabs { display: flex; gap: 0.25rem; background: rgba(0,0,0,0.4); padding: 0.25rem; border-radius: 0.5rem; border: 1px solid var(--border-color); }
+    .chart-tab { padding: 0.3rem 0.8rem; font-size: 0.75rem; border-radius: 0.25rem; color: var(--text-sec); transition: 0.3s; }
+    .chart-tab.active { background: rgba(139, 92, 246, 0.2); color: var(--primary); box-shadow: var(--glow-primary); border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    .line-chart-container { height: 250px; width: 100%; position: relative; }
+    .line-chart-container svg { transition: opacity 0.15s ease; }
+    .chart-axis-label { position: absolute; bottom: -4px; font-size: 0.65rem; color: var(--text-mute); }
+
+    .donut-container { position: relative; height: 192px; width: 192px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
+    .donut-bg { width: 100%; height: 100%; border-radius: 50%; box-shadow: var(--glow-primary); transition: 0.5s; }
+    .donut-inner { position: absolute; inset: 1rem; background: #0B1220; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border-color); }
+    .legend { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .legend-item { display: flex; justify-content: space-between; font-size: 0.85rem; }
+    .legend-label { display: flex; align-items: center; color: var(--text-sec); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; flex-shrink: 0; }
+
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; min-width: 560px;}
+    th { padding-bottom: 0.75rem; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-sec); font-weight: 500; border-bottom: 1px solid var(--border-color); white-space: nowrap;}
+    td { padding: 0.85rem 0; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.02); }
+    tr:last-child td { border-bottom: none; }
+    .post-cell { display: flex; align-items: center; gap: 0.75rem; }
+    .post-thumb { width: 40px; height: 40px; border-radius: 0.5rem; background: #1E293B; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;}
+    .post-title-text { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .type-tag { font-size: 0.7rem; padding: 0.2rem 0.55rem; border-radius: 999px; border: 1px solid var(--border-color); color: var(--text-sec); }
+    .no-results { text-align: center; color: var(--text-mute); font-size: 0.85rem; padding: 2rem 0; }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .action-btn { display: flex; flex-direction: column; align-items: center; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 0.75rem; border: 1px solid var(--border-color); transition: 0.2s; color: var(--text-sec); font-size: 0.8rem; }
+    .action-btn svg { width: 20px; height: 20px; margin-bottom: 0.5rem; stroke: currentColor; fill: none; stroke-width: 2; }
+    .action-btn:hover { background: rgba(139, 92, 246, 0.1); color: var(--text-main); border-color: rgba(139, 92, 246, 0.3); }
+
+    .feed-list { display: flex; flex-direction: column; gap: 1rem; }
+    .feed-item { display: flex; gap: 0.75rem; animation: fadeIn 0.5s ease-in-out; }
+    .feed-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .feed-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .feed-content h4 { font-size: 0.85rem; margin-bottom: 0.2rem; font-weight: 500; }
+    .feed-content p { font-size: 0.75rem; color: var(--text-sec); }
+    .feed-time { font-size: 0.68rem; color: var(--text-mute); margin-top: 0.25rem; }
+
+    .math-formula { padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; font-size: 0.75rem; color: var(--text-sec); margin-top: 10px; font-family: 'Courier New', monospace;}
+
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 25; backdrop-filter: blur(2px); opacity: 0; transition: 0.3s; }
+
+    .toast-container { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
+    .toast { background: #0B1220; border: 1px solid var(--primary); box-shadow: var(--glow-primary); color: white; padding: 12px 18px; border-radius: 8px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; animation: toastSlideIn 0.3s ease forwards, toastFadeOut 0.4s ease 2.6s forwards; }
+    .toast svg { width: 16px; height: 16px; stroke: var(--success); flex-shrink: 0; }
+
+    /* Intro modal */
+    .welcome-box { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1px solid var(--border-color); border-radius: 1rem; box-shadow: 0 8px 40px 0 rgba(139, 92, 246, 0.25); color: var(--text-main); width: 90%; max-width: 460px; padding: 1.75rem 2rem; z-index: 10000; font-size: 0.9rem; line-height: 1.55; animation: fadeIn 0.4s ease forwards; }
+    .welcome-box h3 { font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 0.75rem; }
+    .welcome-box p { margin-bottom: 0.85rem; color: var(--text-sec); }
+    .welcome-box p:last-of-type { margin-bottom: 0; }
+    .close-btn { position: absolute; top: 0.75rem; right: 0.9rem; background: transparent; border: none; font-size: 1.4rem; color: var(--text-sec); cursor: pointer; line-height: 1; transition: color 0.2s; }
+    .close-btn:hover { color: var(--primary); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toastSlideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes toastFadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    @media (max-width: 1200px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 992px) { .grid-3 { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) {
+        .sidebar { position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-overlay.show { display: block; opacity: 1; }
+        .close-sidebar { display: block; }
+        .menu-toggle { display: block; }
+        .grid-4 { grid-template-columns: 1fr; }
+        .page-header { flex-direction: column; align-items: flex-start; }
+        .search-bar { max-width: 200px; }
+    }
+    @media (max-width: 480px) {
+        .search-bar { display: none; }
+        .header { padding: 0 1rem; }
+        .content { padding: 1rem; }
+    }
+</style>
+</head>
+<body>
+
+<!-- Intro / project note -->
+<div id="welcomeBox" class="welcome-box" role="dialog" aria-label="Project note">
+    <button id="closeWelcome" class="close-btn" aria-label="Close">&times;</button>
+    <h3>Verto — Portfolio Concept</h3>
+    <p>This is a frontend UI concept for a LinkedIn analytics dashboard, built to showcase interface and interaction design work.</p>
+    <p>All data shown (followers, posts, engagement) is fictional and generated for demo purposes only — it is not connected to a real LinkedIn account or API.</p>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <div class="brand">
+        <div class="brand-content">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="white" stroke-width="2" fill="none"/></svg>
+            </div>
+            <span>Verto</span>
+        </div>
+        <button class="close-sidebar" id="closeSidebar" aria-label="Close menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    </div>
+    <nav class="nav-menu" id="mainNav">
+        <a href="#" class="nav-item active" data-name="Overview"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>Overview</a>
+        <a href="#" class="nav-item" data-name="Content"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Content</a>
+        <a href="#" class="nav-item" data-name="Analytics"><svg viewBox="0 0 24 24"><path d="M12 20v-6M6 20V10M18 20V4"></path></svg>Analytics</a>
+        <a href="#" class="nav-item" data-name="Audience"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Audience</a>
+        <a href="#" class="nav-item" data-name="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Settings</a>
+    </nav>
+    <div class="sidebar-footer">Built by <strong>Your Name</strong> · Frontend portfolio project</div>
+</aside>
+
+<div class="main-wrapper">
+    <header class="header">
+        <div class="header-left-side">
+            <button class="menu-toggle" id="menuToggle" aria-label="Open menu">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <div class="search-bar">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="searchInput" placeholder="Search posts…" aria-label="Search posts">
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="icon-btn" id="btnNotifications" aria-label="Notifications">
+                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg><span class="badge"></span>
+            </button>
+            <div class="dropdown-panel" id="notifPanel">
+                <div class="dropdown-title">Notifications</div>
+                <div id="notifList"></div>
+            </div>
+            <div class="divider"></div>
+            <button class="avatar-btn" id="btnProfile" aria-label="Profile menu">
+                <div class="avatar-inner"><svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--text-sec)" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+            </button>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="container">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title" id="pageTitle">Overview</h1>
+                    <p class="page-subtitle">Here's how your LinkedIn presence is performing today.</p>
+                </div>
+                <button class="btn-primary" id="btnReport">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export report
+                </button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid-4">
+                <div class="card card-kpi card-kpi-1">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Total Followers</span>
+                        <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.1); color: var(--primary); box-shadow: var(--glow-primary);"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-followers-val">0</div>
+                    <div class="kpi-trend text-success" id="kpi-followers-trend"></div>
+                </div>
+
+                <div class="card card-kpi card-kpi-2">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Engagement Rate</span>
+                        <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.1); color: var(--accent); box-shadow: var(--glow-accent);"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-engagement-val">0%</div>
+                    <div class="kpi-trend text-success" id="kpi-engagement-trend"></div>
+                </div>
+
+                <div class="card card-kpi card-kpi-3">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Total Posts</span>
+                        <div class="kpi-icon" style="background: rgba(236, 72, 153, 0.1); color: var(--pink); box-shadow: var(--glow-pink);"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-posts-val">0</div>
+                    <div class="kpi-trend" style="color: var(--text-sec);" id="kpi-posts-trend"></div>
+                </div>
+
+                <div class="card card-kpi card-kpi-4">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Monthly Growth</span>
+                        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success); box-shadow: var(--glow-success);"><svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-growth-val">0%</div>
+                    <div class="kpi-trend text-success" id="kpi-growth-trend"></div>
+                    <div class="math-formula">Growth rate: R = (V₁ − V₀) / V₀ × 100</div>
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-title">
+                        <span id="chart-title">Follower Growth</span>
+                        <div class="chart-tabs" id="chart-tabs-container">
+                            <button class="chart-tab" data-target="weekly">Weekly</button>
+                            <button class="chart-tab active" data-target="monthly">Monthly</button>
+                            <button class="chart-tab" data-target="quarterly">Quarterly</button>
+                        </div>
+                    </div>
+                    <div class="line-chart-container">
+                        <svg id="lineChartSvg" preserveAspectRatio="none" viewBox="0 0 100 100" style="width: 100%; height: 100%;">
+                            <defs>
+                                <filter id="glow-chart" x="-20%" y="-20%" width="140%" height="140%">
+                                    <feGaussianBlur stdDeviation="2" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                                <linearGradient id="grad-chart" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:rgba(139,92,246,0.4);stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:rgba(139,92,246,0);stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <path id="chart-area-path" fill="url(#grad-chart)"></path>
+                            <path id="chart-line-path" fill="none" stroke="var(--primary)" stroke-width="2" filter="url(#glow-chart)"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Engagement Breakdown</div>
+                    <div class="donut-container">
+                        <div class="donut-bg" id="donut-bg-element"></div>
+                        <div class="donut-inner">
+                            <span style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: white;" id="donut-total">0</span>
+                            <span style="font-size: 0.7rem; color: var(--text-sec); margin-top: 0.25rem;">Total actions</span>
+                        </div>
+                    </div>
+                    <div class="legend" id="donut-legend"></div>
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="card" style="overflow: hidden;">
+                    <div class="card-title">
+                        <span>Top Posts</span>
+                        <button id="btnSeeAllPosts" style="font-size: 0.85rem; color: var(--accent);">View all</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Post</th>
+                                    <th>Type</th>
+                                    <th>Reactions</th>
+                                    <th>Comments</th>
+                                    <th>Engagement</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top-posts-body"></tbody>
+                        </table>
+                        <div class="no-results" id="noResultsMsg" style="display:none;">No posts match your search.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div class="card" style="padding: 1.5rem;">
+                        <div class="card-title" style="margin-bottom: 1rem;">Quick Actions</div>
+                        <div class="action-grid">
+                            <button class="action-btn" data-action="Create post" style="color: var(--primary);">
+                                <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                Create post
+                            </button>
+                            <button class="action-btn" data-action="New campaign" style="color: var(--accent);">
+                                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                New campaign
+                            </button>
+                            <button class="action-btn" data-action="Schedule post" style="color: var(--pink);">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                Schedule post
+                            </button>
+                            <button class="action-btn" data-action="View analytics" style="color: var(--success);">
+                                <svg viewBox="0 0 24 24"><path d="M12 20v-6M6 20V10M18 20V4"></path></svg>
+                                View analytics
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 1.5rem; flex: 1;">
+                        <div class="card-title" style="margin-bottom: 1rem;">Recent Activity</div>
+                        <div class="feed-list" id="feedList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+(function () {
+    /* ---------- Data ---------- */
+    const kpis = {
+        followers: { value: 24582, trend: '+12.4% vs last month', icon: 'up' },
+        engagement: { value: 6.8, trend: '+1.2% vs last month', icon: 'up' },
+        posts: { value: 142, trend: '18 published this month', icon: 'flat' },
+        growth: { value: 8.3, trend: '+2.1% vs last month', icon: 'up' }
+    };
+
+    const chartData = {
+        weekly:   { path: 'M100,78 L100,60 Q80,66 60,52 T20,45 L0,38', label: 'Last 7 days' },
+        monthly:  { path: 'M100,70 Q80,80 60,50 T20,30 L0,20',        label: 'Last 30 days' },
+        quarterly:{ path: 'M100,85 Q75,60 55,62 T25,20 L0,8',         label: 'Last 3 months' }
+    };
+
+    const donutData = [
+        { label: 'Reactions', value: 45, color: 'var(--primary)' },
+        { label: 'Comments',  value: 30, color: 'var(--accent)' },
+        { label: 'Shares',    value: 15, color: 'var(--success)' },
+        { label: 'Saves',     value: 10, color: '#334155' }
+    ];
+    const donutTotalActions = 8340;
+
+    const posts = [
+        { title: '5 lessons from shipping our first design system', type: 'Article', emoji: '📝', reactions: 842, comments: 96, engagement: 9.2, date: 'Jul 14' },
+        { title: 'Behind the scenes of our dashboard redesign', type: 'Image',   emoji: '🖼️', reactions: 611, comments: 54, engagement: 7.4, date: 'Jul 10' },
+        { title: 'Quick demo: our new onboarding flow', type: 'Video',   emoji: '🎬', reactions: 1290, comments: 143, engagement: 12.1, date: 'Jul 05' },
+        { title: 'Which metric matters most to you?', type: 'Poll',    emoji: '📊', reactions: 388, comments: 71, engagement: 8.6, date: 'Jun 29' },
+        { title: 'How we cut onboarding time by 40%', type: 'Article', emoji: '📝', reactions: 705, comments: 62, engagement: 8.0, date: 'Jun 21' }
+    ];
+
+    const notifications = [
+        { title: 'New follower', text: 'Sara Malik started following your page', time: '4m ago', color: 'var(--primary)', icon: 'user' },
+        { title: 'Post published', text: '"5 lessons from shipping…" is now live', time: '2h ago', color: 'var(--success)', icon: 'check' },
+        { title: 'New comment', text: 'Someone commented on your video post', time: '5h ago', color: 'var(--accent)', icon: 'comment' },
+        { title: 'Milestone reached', text: 'You just passed 24,000 followers', time: '1d ago', color: 'var(--pink)', icon: 'star' }
+    ];
+
+    const icons = {
+        user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
+        check: '<polyline points="20 6 9 17 4 12"></polyline>',
+        comment: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>',
+        star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>'
+    };
+
+    /* ---------- Helpers ---------- */
+    function animateCount(el, target, opts) {
+        opts = opts || {};
+        const duration = 900;
+        const start = performance.now();
+        const suffix = opts.suffix || '';
+        const decimals = opts.decimals || 0;
+        function frame(now) {
+            const p = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - p, 3);
+            const val = target * eased;
+            el.textContent = (decimals ? val.toFixed(decimals) : Math.round(val).toLocaleString('en-US')) + suffix;
+            if (p < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    }
+
+    function trendSvg() {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>';
+    }
+
+    function showToast(message) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg><span>' + message + '</span>';
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    /* ---------- Render: KPIs ---------- */
+    function renderKpis() {
+        animateCount(document.getElementById('kpi-followers-val'), kpis.followers.value);
+        document.getElementById('kpi-followers-trend').innerHTML = trendSvg() + kpis.followers.trend;
+
+        animateCount(document.getElementById('kpi-engagement-val'), kpis.engagement.value, { suffix: '%', decimals: 1 });
+        document.getElementById('kpi-engagement-trend').innerHTML = trendSvg() + kpis.engagement.trend;
+
+        animateCount(document.getElementById('kpi-posts-val'), kpis.posts.value);
+        document.getElementById('kpi-posts-trend').textContent = kpis.posts.trend;
+
+        animateCount(document.getElementById('kpi-growth-val'), kpis.growth.value, { suffix: '%', decimals: 1 });
+        document.getElementById('kpi-growth-trend').innerHTML = trendSvg() + kpis.growth.trend;
+    }
+
+    /* ---------- Render: Line chart ---------- */
+    function setChart(key) {
+        const data = chartData[key];
+        const svg = document.getElementById('lineChartSvg');
+        svg.style.opacity = 0;
+        setTimeout(() => {
+            document.getElementById('chart-line-path').setAttribute('d', data.path);
+            document.getElementById('chart-area-path').setAttribute('d', data.path + ' L0,100 L100,100 Z');
+            svg.style.opacity = 1;
+        }, 150);
+    }
+
+    function initChartTabs() {
+        const tabs = document.querySelectorAll('.chart-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                setChart(tab.dataset.target);
+            });
+        });
+        setChart('monthly');
+    }
+
+    /* ---------- Render: Donut ---------- */
+    function renderDonut() {
+        let acc = 0;
+        const stops = donutData.map(d => {
+            const from = acc;
+            acc += d.value;
+            return d.color + ' ' + from + '% ' + acc + '%';
+        }).join(', ');
+        document.getElementById('donut-bg-element').style.background = 'conic-gradient(' + stops + ')';
+        animateCount(document.getElementById('donut-total'), donutTotalActions);
+
+        const legend = document.getElementById('donut-legend');
+        legend.innerHTML = donutData.map(d =>
+            '<div class="legend-item"><span class="legend-label"><span class="dot" style="background:' + d.color + '"></span>' + d.label + '</span><span>' + d.value + '%</span></div>'
+        ).join('');
+    }
+
+    /* ---------- Render: Top posts table (with search) ---------- */
+    function renderPosts(filter) {
+        const body = document.getElementById('top-posts-body');
+        const q = (filter || '').trim().toLowerCase();
+        const filtered = posts.filter(p => p.title.toLowerCase().includes(q));
+
+        document.getElementById('noResultsMsg').style.display = filtered.length ? 'none' : 'block';
+
+        body.innerHTML = filtered.map(p =>
+            '<tr>' +
+                '<td><div class="post-cell"><div class="post-thumb">' + p.emoji + '</div><span class="post-title-text">' + p.title + '</span></div></td>' +
+                '<td><span class="type-tag">' + p.type + '</span></td>' +
+                '<td>' + p.reactions.toLocaleString('en-US') + '</td>' +
+                '<td>' + p.comments.toLocaleString('en-US') + '</td>' +
+                '<td class="text-success">' + p.engagement + '%</td>' +
+                '<td style="color: var(--text-sec);">' + p.date + '</td>' +
+            '</tr>'
+        ).join('');
+    }
+
+    function initSearch() {
+        document.getElementById('searchInput').addEventListener('input', e => renderPosts(e.target.value));
+    }
+
+    /* ---------- Render: Activity feed ---------- */
+    function renderFeed() {
+        document.getElementById('feedList').innerHTML = notifications.map(n =>
+            '<div class="feed-item">' +
+                '<div class="feed-icon" style="background:' + n.color + '22; color:' + n.color + ';"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + icons[n.icon] + '</svg></div>' +
+                '<div class="feed-content"><h4>' + n.title + '</h4><p>' + n.text + '</p><div class="feed-time">' + n.time + '</div></div>' +
+            '</div>'
+        ).join('');
+
+        document.getElementById('notifList').innerHTML = notifications.map(n =>
+            '<div class="dropdown-item"><div class="feed-icon" style="width:26px;height:26px;background:' + n.color + '22; color:' + n.color + ';"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">' + icons[n.icon] + '</svg></div><p><strong>' + n.title + '</strong>' + n.text + '</p></div>'
+        ).join('');
+    }
+
+    /* ---------- Interactions ---------- */
+    function initSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        function open() { sidebar.classList.add('open'); overlay.classList.add('show'); }
+        function close() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+        document.getElementById('menuToggle').addEventListener('click', open);
+        document.getElementById('closeSidebar').addEventListener('click', close);
+        overlay.addEventListener('click', close);
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', e => {
+                e.preventDefault();
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById('pageTitle').textContent = item.dataset.name;
+                close();
+            });
+        });
+    }
+
+    function initDropdowns() {
+        const notifBtn = document.getElementById('btnNotifications');
+        const notifPanel = document.getElementById('notifPanel');
+        notifBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            notifPanel.classList.toggle('open');
+        });
+        document.addEventListener('click', () => notifPanel.classList.remove('open'));
+
+        document.getElementById('btnProfile').addEventListener('click', () => showToast('Profile menu — demo placeholder'));
+        document.getElementById('btnReport').addEventListener('click', () => showToast('Report export started'));
+        document.getElementById('btnSeeAllPosts').addEventListener('click', () => showToast('Full post list — demo placeholder'));
+
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', () => showToast(btn.dataset.action + ' — demo placeholder'));
+        });
+    }
+
+    function initWelcome() {
+        const box = document.getElementById('welcomeBox');
+        function close() {
+            box.style.opacity = 0;
+            box.style.transform = 'translate(-50%, -50%) scale(0.95)';
+            setTimeout(() => box.style.display = 'none', 300);
+        }
+        document.getElementById('closeWelcome').addEventListener('click', close);
+        setTimeout(close, 7000);
+    }
+
+    /* ---------- Init ---------- */
+    document.addEventListener('DOMContentLoaded', () => {
+        renderKpis();
+        initChartTabs();
+        renderDonut();
+        renderPosts('');
+        initSearch();
+        renderFeed();
+        initSidebar();
+        initDropdowns();
+        initWelcome();
+    });
+})();
+</script>
+</body>
+</html>
